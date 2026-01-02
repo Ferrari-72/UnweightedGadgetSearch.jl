@@ -1,0 +1,32 @@
+# Julia package artifacts
+Manifest.toml
+
+# Generated files
+gadget_results/
+*.g6
+results.json
+
+# Log files
+*.log
+
+# Large binary files
+*.tar.gz
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Test artifacts
+/test/coverage/
+*.cov
+

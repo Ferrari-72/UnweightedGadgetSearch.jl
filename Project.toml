@@ -1,0 +1,16 @@
+name = "UnweightedGadgetSearch"
+uuid = "0f379869-1205-4882-a674-140e780c3e3f"
+authors = ["Chunfan Yao <cfyao238@connect.hkust-gz.edu.cn>"]
+version = "0.1.0"
+
+[deps]
+
+[compat]
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
+
