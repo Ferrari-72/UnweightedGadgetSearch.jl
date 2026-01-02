@@ -6,7 +6,7 @@ A Julia package for searching unweighted gadgets in quantum computing.
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/YOUR_USERNAME/UnweightedGadgetSearch.jl")
+Pkg.add(url="https://github.com/Ferrari-72/UnweightedGadgetSearch.jl")
 ```
 
 ## Usage
@@ -20,7 +20,7 @@ using UnweightedGadgetSearch
 ## Development
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/UnweightedGadgetSearch.jl
+git clone https://github.com/Ferrari-72/UnweightedGadgetSearch.jl
 cd UnweightedGadgetSearch.jl
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
