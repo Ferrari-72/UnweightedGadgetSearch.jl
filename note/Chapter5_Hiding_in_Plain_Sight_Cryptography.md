@@ -91,32 +91,97 @@ A trapdoor function f has these properties:
 
 ---
 
-### 5.4 RSA Cryptosystem
+### 5.4 RSA Cryptosystem (RSA加密系统)
 
 **The most famous public key system**, based on factoring difficulty.
+> RSA是最著名的公钥加密系统，安全性基于大数分解的困难性
 
-#### Key Generation
-1. Choose two large primes p and q
-2. Compute n = p × q
-3. Compute φ(n) = (p-1)(q-1)
-4. Choose e such that gcd(e, φ(n)) = 1
-5. Compute d such that ed ≡ 1 (mod φ(n))
+#### Key Generation (密钥生成) - Step by Step:
 
-**Public Key**: (n, e)
-**Private Key**: (n, d)
+```
+步骤1: 选择两个大素数 p 和 q
+       例如: p = 61, q = 53
+       
+步骤2: 计算 n = p × q
+       n = 61 × 53 = 3233
+       (n 会公开，但 p 和 q 要保密！)
+       
+步骤3: 计算欧拉函数 φ(n) = (p-1)(q-1)
+       φ(3233) = 60 × 52 = 3120
+       (这个值也要保密！)
+       
+步骤4: 选择公钥指数 e，要求 gcd(e, φ(n)) = 1
+       常用 e = 65537 (因为二进制只有两个1，计算快)
+       这里选 e = 17 (与3120互素)
+       
+步骤5: 计算私钥指数 d，满足 ed ≡ 1 (mod φ(n))
+       17 × d ≡ 1 (mod 3120)
+       d = 2753 (因为 17 × 2753 = 46801 = 15 × 3120 + 1)
+```
 
-#### Encryption and Decryption
-- **Encrypt**: C = M^e mod n
-- **Decrypt**: M = C^d mod n
+**公钥 Public Key**: (n, e) = (3233, 17) ← 可以公开给任何人！
+**私钥 Private Key**: (n, d) = (3233, 2753) ← 必须保密！
 
-#### Why It Works
-By Euler's theorem: M^(ed) ≡ M^(1 + kφ(n)) ≡ M (mod n)
+#### Encryption and Decryption (加密和解密):
 
-#### Security
-RSA security relies on the **factoring assumption**:
-> Given n = p × q where p, q are large primes, finding p and q is computationally infeasible.
+```
+加密 (任何人都可以用公钥加密):
+   C = M^e mod n
+   
+   例: 加密消息 M = 123
+   C = 123^17 mod 3233 = 855
 
-**Current Standard**: 2048-bit keys (≈ 617 decimal digits)
+解密 (只有私钥持有者可以解密):
+   M = C^d mod n
+   
+   例: 解密密文 C = 855
+   M = 855^2753 mod 3233 = 123 ✓ 还原了！
+```
+
+**图示:**
+```
+Alice 想发消息给 Bob:
+
+Alice                                    Bob
+─────                                    ────
+                    ← Bob的公钥(n,e) ←   Bob生成密钥对
+                                         公钥: (n, e) 公开
+                                         私钥: (n, d) 保密
+                                         
+用Bob的公钥加密:                          
+C = M^e mod n      
+       ─── 密文C ───────────────→        用私钥解密:
+                                         M = C^d mod n
+                                         
+即使Eve截获C，没有私钥d也无法解密！
+```
+
+#### Why It Works (为什么有效):
+
+> 数学原理：欧拉定理
+
+$$M^{ed} \equiv M^{1 + k\phi(n)} \equiv M \cdot (M^{\phi(n)})^k \equiv M \cdot 1^k \equiv M \pmod{n}$$
+
+简单说：加密后再解密，能还原原始消息！
+
+#### Security (安全性):
+
+RSA的安全性依赖于**大数分解难题**:
+> 给定 n = p × q（两个大素数的乘积），找出 p 和 q 是极其困难的
+
+```
+为什么分解 n 就能破解？
+如果知道 p 和 q:
+→ 可以计算 φ(n) = (p-1)(q-1)
+→ 可以计算 d（私钥）
+→ 可以解密任何消息！
+
+现实中的 n 有多大？
+- 2048位 ≈ 617位十进制数
+- 分解这样的数，经典计算机需要数十亿年！
+```
+
+**Current Standard**: 2048-bit keys (当前标准：2048位密钥)
 
 ---
 
@@ -164,28 +229,82 @@ Both Alice and Bob now share secret s = g^(ab) mod p, but Eve only sees g^a and 
 
 ## 🔬 Quantum Cryptography
 
-### Shor's Algorithm: Breaking RSA
+### Shor's Algorithm: Breaking RSA (Shor算法：破解RSA)
 
 **The quantum algorithm that threatens current cryptography!**
+> 这是威胁现有密码学的量子算法！
 
-| Problem | Classical Best | Shor's Algorithm |
-|---------|---------------|------------------|
-| Factoring | O(exp(n^(1/3))) | O(n³) |
-| Discrete Log | O(exp(n^(1/2))) | O(n³) |
+#### Speed Comparison (速度对比):
 
-**Impact**: A large-scale quantum computer could break RSA, DSA, ECDSA, and DH!
+| 问题 | 经典最佳算法 | Shor算法 | 加速幅度 |
+|------|-------------|----------|----------|
+| 大数分解 | O(exp(n^(1/3))) 指数级 | O(n³) 多项式级 | **指数级加速!** |
+| 离散对数 | O(exp(n^(1/2))) 指数级 | O(n³) 多项式级 | **指数级加速!** |
 
-#### How Shor's Algorithm Works (Simplified)
+**Impact (影响)**: 大规模量子计算机可以破解 RSA, DSA, ECDSA, DH 等所有基于分解和离散对数的加密系统！
 
-1. **Quantum Period Finding**: Uses quantum Fourier transform to find the period of f(x) = a^x mod N
+#### How Shor's Algorithm Works (Shor算法工作原理):
 
-2. **Classical Reduction**: Convert period to factors using:
-   - If r is the period of a^x mod N
-   - Then gcd(a^(r/2) ± 1, N) likely gives factors
+> 核心思想：把分解问题转化为**周期查找**问题，而量子计算机擅长找周期！
 
-#### Timeline Concern
-- Current estimate: ~10-20 years until cryptographically relevant quantum computers
-- **"Harvest now, decrypt later"**: Adversaries may store encrypted data to decrypt later
+```
+步骤 1: 把分解转化为周期问题
+────────────────────────────────
+要分解 N = 15
+选择随机数 a = 7（与N互素）
+
+考虑函数: f(x) = 7^x mod 15
+
+x:    0  1  2   3   4  5  6   7   8  ...
+f(x): 1  7  4  13   1  7  4  13   1  ...
+              ↑               ↑
+              周期 r = 4！
+              
+步骤 2: 量子傅里叶变换找周期
+────────────────────────────────
+经典计算机找周期: 可能需要试很多 x 值
+量子计算机: 用量子傅里叶变换，多项式时间搞定！
+
+步骤 3: 从周期得到因子
+────────────────────────────────
+已知 r = 4
+
+计算:
+- a^(r/2) + 1 = 7^2 + 1 = 50
+- a^(r/2) - 1 = 7^2 - 1 = 48
+
+求最大公因数:
+- gcd(50, 15) = 5  ← 一个因子！
+- gcd(48, 15) = 3  ← 另一个因子！
+
+验证: 5 × 3 = 15 ✓
+```
+
+**为什么量子计算机能快速找周期？**
+```
+量子叠加 + 量子傅里叶变换
+    ↓
+同时"检查"所有可能的周期
+    ↓
+测量后得到正确周期
+```
+
+#### Timeline Concern (时间线担忧):
+
+```
+现在 ─────────────────────────────→ 未来(10-20年?)
+  │                                      │
+  │ 量子计算机还太小                      │ 大规模量子计算机
+  │ (几百个量子比特)                      │ (需要数百万量子比特)
+  │                                      │
+  ↓                                      ↓
+目前RSA安全                            RSA可能被破解！
+```
+
+**"Harvest now, decrypt later" (现在收集，以后解密)**:
+> ⚠️ 对手可能现在就在收集加密数据，等量子计算机成熟后再解密！
+> 
+> 这对需要长期保密的数据（政府机密、医疗记录等）是个严重威胁！
 
 ### Post-Quantum Cryptography
 
