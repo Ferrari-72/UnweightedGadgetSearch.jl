@@ -116,84 +116,232 @@ def backtrack(partial_solution):
 ### 4.4 DPLL Algorithm for SAT
 
 **Davis-Putnam-Logemann-Loveland (DPLL)** is a complete SAT solver.
+> DPLL是一个**完备的**SAT求解器，意思是：如果有解，它一定能找到；如果无解，它能证明无解。
 
-#### Key Techniques:
+#### Key Techniques (核心技术):
 
-1. **Unit Propagation**: If a clause has one unassigned literal, it must be true
-2. **Pure Literal Elimination**: If a variable appears in only one polarity, set it
-3. **Branching**: Choose a variable and try both values
+**1. Unit Propagation (单元传播)**
+> 如果一个子句只剩下一个未赋值的文字，那这个文字**必须**为TRUE
+
+```
+Example 例子:
+Formula: (x₁ ∨ x₂ ∨ x₃) ∧ (¬x₁)
+                          ↑
+                    只有一个文字！
+                    
+(¬x₁) 只有一个变量 → 所以 x₁ = FALSE 是强制的！
+
+比喻：房间只有一个出口，你必须走那个出口
+```
+
+**2. Pure Literal Elimination (纯文字消除)**
+> 如果一个变量在整个公式中只以正形式出现（或只以负形式出现），直接设置它
+
+```
+Example 例子:
+Formula: (x₁ ∨ x₂) ∧ (x₁ ∨ x₃) ∧ (¬x₂ ∨ x₄)
+          ↑           ↑
+    x₁ 只以正形式出现（从来没有 ¬x₁）
+    
+所以设置 x₁ = TRUE（让所有包含x₁的子句都满足）
+
+比喻：如果某人对你只说好话，让他开心就对了！
+```
+
+**3. Branching (分支/猜测)**
+> 选择一个变量，猜测TRUE或FALSE，然后继续求解
+
+```
+当无法使用单元传播或纯文字消除时：
+→ 选一个变量（比如 x₅）
+→ 先试 x₅ = TRUE，求解剩余部分
+→ 如果失败，回溯，试 x₅ = FALSE
+
+比喻：走到岔路口，先试一条路，走不通就回头试另一条
+```
+
+#### DPLL Algorithm Pseudocode (伪代码):
 
 ```python
 def DPLL(formula, assignment):
-    # Unit propagation
+    # 单元传播 - 处理只有一个文字的子句
     while unit_clause exists:
         propagate(unit_clause)
     
-    # Pure literal elimination
+    # 纯文字消除 - 处理只出现一种极性的变量
     for pure_literal in formula:
         assign(pure_literal)
     
-    # Check termination
-    if formula is satisfied:
+    # 检查终止条件
+    if formula is satisfied:    # 所有子句都满足了
         return assignment
-    if formula has empty clause:
+    if formula has empty clause: # 有子句无法满足
         return UNSAT
     
-    # Branch
+    # 分支 - 猜测一个变量的值
     x = choose_variable(formula)
     result = DPLL(formula ∧ x, assignment ∪ {x=true})
     if result != UNSAT:
         return result
-    return DPLL(formula ∧ ¬x, assignment ∪ {x=false})
+    return DPLL(formula ∧ ¬x, assignment ∪ {x=false})  # 回溯
 ```
-
-#### Modern SAT Solvers
-
-- **Conflict-Driven Clause Learning (CDCL)**: Learn from conflicts
-- **Non-chronological backtracking**: Jump back multiple levels
-- **Restarts**: Reset search periodically
-
-These can solve instances with millions of variables!
 
 ---
 
-### 4.5 Local Search
+### 4.5 Modern SAT Solvers: CDCL
 
-When complete search is too expensive, use **local search**.
+**CDCL = Conflict-Driven Clause Learning (冲突驱动的子句学习)**
 
-#### Hill Climbing
+> 这是DPLL的改进版，现代SAT求解器都用这个！
+
+#### Improvement 1: Clause Learning (子句学习)
+
+> 当遇到冲突（死路）时，分析原因，添加新子句防止重蹈覆辙
+
+```
+场景：
+我们尝试了: x₁=T, x₂=T, x₃=T → 冲突！
+
+分析：冲突是因为 x₁=T 和 x₃=T 同时为真
+
+学习新子句: (¬x₁ ∨ ¬x₃)
+意思是："不要再同时让 x₁ 和 x₃ 都为 TRUE 了！"
+
+比喻：你摔了一跤，记下来"这里有坑"，下次不会再摔
+```
+
+#### Improvement 2: Non-chronological Backtracking (非时序回溯)
+
+> 直接跳回到真正导致问题的层级，而不是一步一步回退
+
+```
+普通回溯:
+Level 1: x₁ = T
+Level 2: x₂ = T  
+Level 3: x₃ = T
+Level 4: x₄ = T → 冲突！
+
+普通做法: 回到 Level 3, 试 x₃ = F
+
+非时序回溯:
+Level 1: x₁ = T
+Level 2: x₂ = T  ← 真正的问题根源！
+Level 3: x₃ = T
+Level 4: x₄ = T → 冲突！
+
+聪明做法: 直接跳到 Level 2, 试 x₂ = F
+         (跳过 Level 3！)
+
+比喻：
+- 普通回溯 = 一步一步往回走
+- 非时序回溯 = 直接传送到问题发生的地方！
+```
+
+#### Improvement 3: Restarts (重启)
+
+> 定期放弃当前搜索，重新开始（但保留学到的子句）
+
+```
+为什么要重启？
+有时候搜索会"卡"在一个不好的区域。
+带着学到的知识重新开始，可能更快找到解！
+
+比喻：
+- 你在迷宫里迷路了
+- 与其继续瞎走，不如回到起点
+- 但你记住了哪些路是死路
+- 第二次尝试会快很多！
+```
+
+#### Comparison Table (对比表):
+
+| 技术 | DPLL | CDCL |
+|------|------|------|
+| Unit Propagation (单元传播) | ✅ 有 | ✅ 有 |
+| Pure Literal (纯文字消除) | ✅ 有 | ✅ 有 |
+| Branching (分支) | ✅ 有 | ✅ 有 |
+| Clause Learning (子句学习) | ❌ 无 | ✅ 有 |
+| Smart Backtracking (智能回溯) | ❌ 一步一步 | ✅ 可跳跃 |
+| Restarts (重启) | ❌ 无 | ✅ 有 |
+
+> **现代CDCL求解器可以解决包含数百万变量的SAT问题！**
+
+---
+
+### 4.6 Local Search (局部搜索)
+
+> 当完全搜索太慢时，使用**局部搜索** - 不保证找到最优解，但通常能找到不错的解
+
+#### Hill Climbing (爬山算法)
+
+> 像爬山一样，每一步都往更高的地方走
 
 ```python
 def hill_climbing(initial):
-    current = initial
+    current = initial           # 从某个初始位置开始
     while True:
-        neighbor = best_neighbor(current)
+        neighbor = best_neighbor(current)  # 找最好的邻居
         if score(neighbor) <= score(current):
-            return current  # Local optimum
-        current = neighbor
+            return current      # 邻居都不比我好，停下来
+        current = neighbor      # 移动到更好的邻居
 ```
 
-**Problem**: Gets stuck in local optima!
+**图解:**
+```
+        /\
+       /  \      ← 全局最优 (Global Optimum)
+      /    \
+     /      \  /\
+    /        \/  \  ← 你可能卡在这里！局部最优 (Local Optimum)
+   /              \
+--/                \--
+   ^
+   起点
+```
 
-#### Simulated Annealing
+**问题**: 会卡在局部最优！(Gets stuck in local optima!)
 
-Allow occasional "bad" moves to escape local optima:
+比喻：你想爬到最高的山峰，但你被一个小山丘困住了，因为周围都是下坡路。
+
+---
+
+#### Simulated Annealing (模拟退火)
+
+> 受金属退火过程启发：高温时原子活跃乱动，低温时稳定下来
+
+**核心思想**: 允许偶尔走"坏"的一步来逃离局部最优！
 
 ```python
 def simulated_annealing(initial, temperature):
     current = initial
     while temperature > 0:
-        neighbor = random_neighbor(current)
+        neighbor = random_neighbor(current)  # 随机选邻居
         delta = score(neighbor) - score(current)
         
+        # 关键：即使邻居更差，也有一定概率接受！
         if delta > 0 or random() < exp(delta / temperature):
             current = neighbor
         
-        temperature *= cooling_rate
+        temperature *= cooling_rate  # 温度逐渐降低
     return current
 ```
 
-**Key Idea**: High temperature → more random; Low temperature → greedy
+**温度的作用:**
+| 温度 | 行为 | 比喻 |
+|------|------|------|
+| 高温 🔥 | 经常接受差的解，到处乱跳 | 热水里的分子到处乱动 |
+| 低温 ❄️ | 几乎只接受更好的解 | 冰里的分子不动了 |
+
+**为什么有效?**
+```
+高温阶段: 探索整个搜索空间，可能跳出局部最优
+   ↓
+温度下降: 逐渐变得"贪心"
+   ↓
+低温阶段: 精细调整，收敛到好的解
+```
+
+比喻：找工作时，年轻时可以多尝试不同领域（高温），年纪大了就专注深耕（低温）
 
 ---
 
