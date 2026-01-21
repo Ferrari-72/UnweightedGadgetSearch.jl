@@ -387,3 +387,4 @@ Independent Set is central to P vs NP because:
 
 *Next: [Chapter 7 - Algorithms for Search](./Chapter7_Algorithms_for_Search.md)*
 
+
