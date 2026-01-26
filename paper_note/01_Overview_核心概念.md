@@ -41,12 +41,12 @@ The key insight is:
 **Definition**: Given a graph G = (V, E), find the largest subset S ⊆ V such that no two vertices in S are connected by an edge.
 
 ```
-Example graph:        Independent set {1,3}:
+Example graph:        Independent set {1,4}:
     1---2                 ●---○
     |   |                 |   |
-    3---4                 ●---○
+    3---4                 ○---●
 ```
-In this example, {1,3} is an independent set because 1 and 3 are NOT connected.
+In this example, {1,4} is an independent set because 1 and 4 are NOT connected (they are diagonal).
 
 **Code Connection** 代码关联:
 ```julia
