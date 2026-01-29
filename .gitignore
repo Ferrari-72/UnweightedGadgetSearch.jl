@@ -49,3 +49,5 @@ Thumbs.db
 *.bcf
 *.run.xml
 *-blx.bib
+
+/paper_note/*.pdf
